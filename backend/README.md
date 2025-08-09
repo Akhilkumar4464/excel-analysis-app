@@ -1,92 +1,100 @@
-# Excel Analyzer Backend
+# Excel Analysis App Backend
 
-A comprehensive backend for an Excel analysis application built with Node.js, Express, and MongoDB.
+A Node.js backend for the Excel Analysis App with MongoDB integration.
 
 ## Features
 
-- **User Authentication**: JWT-based authentication with registration and login
-- **Excel File Upload**: Support for .xlsx files with processing and analysis
-- **Data Analysis**: Chart data endpoints for visualization
-- **User Management**: Profile management and account settings
-- **Admin Panel**: Admin-only routes for user management
+- **User Authentication**: JWT-based authentication system
+- **File Upload**: Excel file upload and processing
+- **Data Analysis**: Automatic data analysis and insights generation
+- **MongoDB Integration**: Full MongoDB support with Mongoose
+- **RESTful API**: Clean and organized API endpoints
 
 ## Tech Stack
 
-- **Backend**: Node.js, Express.js
-- **Database**: MongoDB with Mongoose
-- **Authentication**: JWT (JSON Web Tokens)
-- **File Upload**: Multer for handling file uploads
-- **Security**: Helmet, CORS, Rate limiting
-- **Excel Processing**: XLSX library for Excel file processing
+- **Node.js** - Runtime environment
+- **Express.js** - Web framework
+- **MongoDB** - Database
+- **Mongoose** - MongoDB object modeling
+- **JWT** - Authentication tokens
+- **Multer** - File upload handling
+- **XLSX** - Excel file processing
 
 ## Installation
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+1. Install dependencies:
+```bash
+npm install
+```
 
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   ```
+2. Create a `.env` file in the root directory:
+```bash
+MONGODB_URI=mongodb+srv://akhilsharma:akhil123@cluster0.qu0s4y9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+JWT_SECRET=your_jwt_secret_key_here
+PORT=5000
+NODE_ENV=development
+```
 
-4. Configure MongoDB:
-   - Install MongoDB locally or use MongoDB Atlas
-   - Update the `MONGODB_URI` in `.env`
+3. Start the server:
+```bash
+# Development mode
+npm run dev
 
-5. Start the server:
-   ```bash
-   npm start
-   ```
-
-## Environment Variables
-
-- `PORT`: Server port (default: 5000)
-- `MONGODB_URI`: MongoDB connection string
-- `JWT_SECRET`: JWT secret key
-- `JWT_EXPIRE`: JWT expiration time
-- `MAX_FILE_SIZE`: Maximum file upload size (default: 10MB)
+# Production mode
+npm start
+```
 
 ## API Endpoints
 
 ### Authentication
-- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
 - `GET /api/auth/me` - Get current user
+- `PUT /api/auth/profile` - Update user profile
 
-### File Upload
-- `POST /api/files/upload` - Upload Excel file
-- `GET /api/files` - Get user's files
-- `GET /api/files/:id` - Get file details
-- `DELETE /api/files/:id` - Delete file
+### Excel Files
+- `POST /api/excel/upload` - Upload Excel file
+- `GET /api/excel/files` - Get user's files
+- `GET /api/excel/files/:id` - Get specific file
+- `DELETE /api/excel/files/:id` - Delete file
+- `GET /api/excel/files/:id/analyze` - Analyze file data
 
-### Data Analysis
-- `GET /api/data/file/:id` - Get file data
-- `GET /api/data/file/:id/summary` - Get data summary
-- `GET /api/data/file/:id/chart-data` - Get chart-ready data
+### Users (Admin only)
+- `GET /api/users` - Get all users
+- `GET /api/users/:id` - Get user by ID
+- `PUT /api/users/:id/role` - Update user role
+- `GET /api/users/stats/overview` - Get user statistics
 
-### User Management
-- `GET /api/users/profile` - Get user profile
-- `PUT /api/users/profile` - Update profile
-- `GET /api/users/stats` - Get user statistics
+## File Structure
+
+```
+backend/
+├── models/
+│   ├── User.js
+│   └── ExcelFile.js
+├── routes/
+│   ├── auth.js
+│   ├── excel.js
+│   └── users.js
+├── middleware/
+│   └── auth.js
+├── uploads/
+├── .env
+├── server.js
+└── package.json
+```
 
 ## Usage
 
-1. Register a new account
-2. Upload Excel files
-3. Process and analyze data
-4. View charts and visualizations
-5. Manage account settings
+1. Start the backend server
+2. Use the frontend to interact with the API
+3. Upload Excel files for analysis
+4. View processed data and insights
 
-## Contributing
+## Security Features
 
-1. Fork the repository
-2. Create a feature branch
-3. Make changes
-4. Submit a pull request
-
-## License
-
-MIT License
+- Password hashing with bcrypt
+- JWT token authentication
+- File type validation
+- Request size limits
+- CORS protection

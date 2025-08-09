@@ -1,13 +1,44 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Login() {
-    const [email , setEmail] = React.useState(" ");
-    const [password , setPassword] = React.useState(" ");
+    const [email, setEmail] = React.useState("");
+    const [password, setPassword] = React.useState("");
+    const [error, setError] = React.useState("");
+    const navigate = useNavigate();
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        try {
+            const response = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                setError(data.message || 'Login failed');
+                return;
+            }
+            
+            // Save token
+            localStorage.setItem('token', data.token);
+            // On success, navigate to dashboard
+            navigate('/dashboard');
+        } catch (error) {
+            setError('Network error', { cause: error });
+        }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-200">
             <div className="w-full max-w-md">
-                <form className="bg-white shadow-2xl rounded-2xl px-10 pt-10 pb-8">
+                <form className="bg-white shadow-2xl rounded-2xl px-10 pt-10 pb-8" onSubmit={handleSubmit}>
                     <div className="flex flex-col items-center mb-8">
                         <img
                             src="https://img.icons8.com/ios-filled/100/4e8cff/user-male-circle.png"
@@ -16,6 +47,7 @@ export default function Login() {
                         />
                         <h2 className="text-3xl font-bold text-blue-700 mb-2">Welcome Back</h2>
                         <p className="text-gray-500 text-sm">Sign in to your account</p>
+                        {error && <p className="text-red-600 mt-2">{error}</p>}
                     </div>
                     <div className="mb-6">
                         <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="email">
@@ -27,6 +59,7 @@ export default function Login() {
                             placeholder="you@example.com"
                             value={email}
                             onChange={e => setEmail(e.target.value)}
+                            required
                         />
                     </div>
                     <div className="mb-8">
@@ -39,6 +72,7 @@ export default function Login() {
                             placeholder="Enter your password"
                             value={password}
                             onChange={e => setPassword(e.target.value)}
+                            required
                         />
                     </div>
                     <button
