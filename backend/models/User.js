@@ -28,6 +28,20 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  requestedRole: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'approved'
+  },
+  isApproved: {
+    type: Boolean,
+    default: true
+  },
   profile: {
     firstName: String,
     lastName: String,
