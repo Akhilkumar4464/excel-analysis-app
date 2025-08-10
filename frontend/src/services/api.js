@@ -40,6 +40,9 @@ export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   getCurrentUser: () => api.get('/auth/me'),
   updateProfile: (profileData) => api.put('/auth/profile', profileData),
+  getPendingAdmins: () => api.get('/auth/pending-admins'),
+  approveAdmin: (userId) => api.put(`/auth/approve-admin/${userId}`),
+  rejectAdmin: (userId) => api.put(`/auth/reject-admin/${userId}`),
 };
 
 export const excelAPI = {

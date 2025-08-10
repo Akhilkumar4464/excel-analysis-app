@@ -6,6 +6,7 @@ function Register() {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [role, setRole] = useState("user");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -110,6 +111,20 @@ function Register() {
                             required
                             minLength={6}
                         />
+                    </div>
+                    <div>
+                        <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                            Register As
+                        </label>
+                        <select
+                            id="role"
+                            value={role}
+                            onChange={e => setRole(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        >
+                            <option value="user">Regular User</option>
+                            <option value="admin">Admin (Requires Approval)</option>
+                        </select>
                     </div>
                     <button
                         type="submit"
