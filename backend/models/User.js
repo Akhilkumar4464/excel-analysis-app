@@ -25,27 +25,26 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'pending_admin'],
     default: 'user'
-  },
-  requestedRole: {
-    type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
-  },
-  approvalStatus: {
-    type: String,
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'approved'
   },
   isApproved: {
     type: Boolean,
     default: true
   },
-  profile: {
-    firstName: String,
-    lastName: String,
-    avatar: String
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockUntil: {
+    type: Date
+  },
+  isLocked: {
+    type: Boolean,
+    default: false
+  },
+  lastLogin: {
+    type: Date
   },
   createdAt: {
     type: Date,
@@ -73,6 +72,24 @@ userSchema.pre('save', async function(next) {
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Increment login attempts and lock account if needed
+userSchema.methods.incLoginAttempts = async function() {
+  this.loginAttempts += 1;
+  if (this.loginAttempts >= 5) {
+    this.isLocked = true;
+    this.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  }
+  await this.save();
+};
+
+// Reset login attempts
+userSchema.methods.resetLoginAttempts = async function() {
+  this.loginAttempts = 0;
+  this.isLocked = false;
+  this.lockUntil = null;
+  await this.save();
 };
 
 // Update updatedAt on save

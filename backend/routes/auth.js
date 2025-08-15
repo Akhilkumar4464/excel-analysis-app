@@ -1,255 +1,221 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-
 const router = express.Router();
 
-// Register
+// Rate limiting for login attempts
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: {
+    message: 'Too many login attempts, please try again later',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Validation middleware
+const validateLogin = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email address'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long')
+];
+
+// Enhanced login route with security measures
+router.post('/login', loginLimiter, validateLogin, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors: errors.array() 
+      });
+    }
+
+    const { email, password } = req.body;
+
+    // Find user and include lock status
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ 
+        message: 'Invalid email or password' 
+      });
+    }
+
+    // Check if account is locked
+    if (user.isLocked) {
+      return res.status(423).json({ 
+        message: 'Account temporarily locked due to too many failed login attempts',
+        lockUntil: user.lockUntil
+      });
+    }
+
+    // Check password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      // Increment failed login attempts
+      await user.incLoginAttempts();
+      return res.status(401).json({ 
+        message: 'Invalid email or password' 
+      });
+    }
+
+    // Reset login attempts on successful login
+    if (user.loginAttempts > 0) {
+      await user.resetLoginAttempts();
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate tokens
+    const accessToken = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Login successful',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        lastLogin: user.lastLogin
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      message: 'Server error during login', 
+      error: error.message 
+    });
+  }
+});
+
+// Register with enhanced security
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password, role = 'user' } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    const existingUser = await User.findOne({ 
+      $or: [{ email }, { username }] 
+    });
+    
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ 
+        message: 'User already exists' 
+      });
     }
-
-    // Set approval status based on role
-    const isAdmin = role === 'admin';
-    const approvalStatus = isAdmin ? 'pending' : 'approved';
-    const isApproved = !isAdmin;
 
     // Create new user
     const user = new User({
       username,
       email,
       password,
-      role: isAdmin ? 'user' : 'user', // Start as user, upgrade after approval
-      requestedRole: role,
-      approvalStatus,
-      isApproved
+      role: role === 'admin' ? 'pending_admin' : role
     });
+
     await user.save();
 
-    // Generate token only for approved users
-    if (!isAdmin) {
-      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-      
-      res.status(201).json({
-        message: 'User created successfully',
-        token,
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          role: user.role,
-          approvalStatus: user.approvalStatus
-        }
-      });
-    } else {
-      res.status(201).json({
-        message: 'Admin registration submitted for approval',
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          role: user.role,
-          approvalStatus: user.approvalStatus
-        }
-      });
-    }
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+    // Generate tokens
+    const accessToken = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
 
-// Login
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
-    // Find user
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    // Check if admin is approved
-    if (user.requestedRole === 'admin' && user.approvalStatus !== 'approved') {
-      if (user.approvalStatus === 'pending') {
-        return res.status(403).json({ 
-          message: 'Admin registration is pending approval',
-          approvalStatus: 'pending'
-        });
-      } else if (user.approvalStatus === 'rejected') {
-        return res.status(403).json({ 
-          message: 'Admin registration has been rejected',
-          approvalStatus: 'rejected'
-        });
-      }
-    }
-
-    // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    // Update role if admin is approved
-    let finalRole = user.role;
-    if (user.requestedRole === 'admin' && user.approvalStatus === 'approved') {
-      finalRole = 'admin';
-    }
-
-    // Generate token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-    res.json({
-      message: 'Login successful',
-      token,
+    res.status(201).json({
+      message: 'User registered successfully',
+      accessToken,
+      refreshToken,
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
-        role: finalRole,
-        approvalStatus: user.approvalStatus
+        role: user.role
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 });
 
 // Get current user
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
+    const user = await User.findById(req.user._id).select('-password');
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
+});
+
+// Refresh token endpoint
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
     
-    // Update role if admin is approved
-    let finalRole = user.role;
-    if (user.requestedRole === 'admin' && user.approvalStatus === 'approved') {
-      finalRole = 'admin';
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'Refresh token is required' });
     }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password');
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    // Generate new access token
+    const accessToken = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
 
     res.json({
-      ...user.toObject(),
-      role: finalRole
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Get pending admin registrations (for super admin)
-router.get('/pending-admins', auth, async (req, res) => {
-  try {
-    // Check if user is admin
-    const requestingUser = await User.findById(req.user.userId);
-    if (requestingUser.requestedRole !== 'admin' || requestingUser.approvalStatus !== 'approved') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    const pendingAdmins = await User.find({
-      requestedRole: 'admin',
-      approvalStatus: 'pending'
-    }).select('-password');
-
-    res.json(pendingAdmins);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Approve admin registration
-router.put('/approve-admin/:id', auth, async (req, res) => {
-  try {
-    // Check if user is admin
-    const requestingUser = await User.findById(req.user.userId);
-    if (requestingUser.requestedRole !== 'admin' || requestingUser.approvalStatus !== 'approved') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { 
-        approvalStatus: 'approved',
-        role: 'admin',
-        isApproved: true
-      },
-      { new: true }
-    ).select('-password');
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({ 
-      message: 'Admin approved successfully', 
+      accessToken,
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
-        role: 'admin',
-        approvalStatus: 'approved'
+        role: user.role
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Reject admin registration
-router.put('/reject-admin/:id', auth, async (req, res) => {
-  try {
-    // Check if user is admin
-    const requestingUser = await User.findById(req.user.userId);
-    if (requestingUser.requestedRole !== 'admin' || requestingUser.approvalStatus !== 'approved') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { 
-        approvalStatus: 'rejected',
-        isApproved: false
-      },
-      { new: true }
-    ).select('-password');
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({ 
-      message: 'Admin registration rejected', 
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        approvalStatus: 'rejected'
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Update profile
-router.put('/profile', auth, async (req, res) => {
-  try {
-    const { firstName, lastName } = req.body;
-    
-    const user = await User.findByIdAndUpdate(
-      req.user.userId,
-      { 'profile.firstName': firstName, 'profile.lastName': lastName },
-      { new: true }
-    ).select('-password');
-
-    res.json({ message: 'Profile updated successfully', user });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(401).json({ message: 'Invalid refresh token' });
   }
 });
 
