@@ -1,12 +1,15 @@
-import React, { useState, useRef } from "react";
-import * as XLSX from "xlsx";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, FileText, BarChart3, Zap, Shield, Users } from "lucide-react";
-import  Navigation from '../src/components/Navigation';
+import { Upload, BarChart3, Zap, Shield, Users, File, Trash2, Eye } from "lucide-react";
+import Navigation from '../src/components/Navigation';
+import { excelAPI } from '../src/services/api';
 
 export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [userFiles, setUserFiles] = useState([]);
+  const [loadingFiles, setLoadingFiles] = useState(true);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -24,7 +27,7 @@ export default function Home() {
     {
       icon: <Shield className="w-8 h-8" />,
       title: "Secure & Private",
-      description: "Your data is encrypted and never stored on our servers"
+      description: "Your data is encrypted and stored securely in our database"
     },
     {
       icon: <Users className="w-8 h-8" />,
@@ -40,6 +43,22 @@ export default function Home() {
     { value: "24/7", label: "Support" }
   ];
 
+  useEffect(() => {
+    fetchUserFiles();
+  }, []);
+
+  const fetchUserFiles = async () => {
+    try {
+      setLoadingFiles(true);
+      const response = await excelAPI.getFiles();
+      setUserFiles(response.data);
+    } catch (error) {
+      console.error('Error fetching files:', error);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
   const handleFileUpload = async (file) => {
     if (!file) return;
     
@@ -48,31 +67,34 @@ export default function Home() {
       return;
     }
 
-    // Simulate upload progress
-    setUploadProgress(0);
-    const progressInterval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 100);
+    const formData = new FormData();
+    formData.append('file', file);
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const binaryStr = evt.target.result;
-      const workbook = XLSX.read(binaryStr, { type: "binary" });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(sheet);
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const response = await excelAPI.uploadFile(formData);
+      const { data, file: uploadedFile } = response.data;
       
+      // Update progress to 100% on successful upload
+      setUploadProgress(100);
+      
+      // Add new file to the list
+      setUserFiles(prev => [uploadedFile, ...prev]);
+      
+      // Navigate to dashboard with the data
       setTimeout(() => {
-        navigate("/dashboard", { state: { data: jsonData } });
-      }, 1000);
-    };
-    reader.readAsBinaryString(file);
+        navigate("/dashboard", { state: { data, fileId: uploadedFile._id } });
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Upload failed. Please try again.');
+      setUploadProgress(0);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleDragOver = (e) => {
@@ -98,7 +120,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-600 via-purple-400 to-slate-900">
       <Navigation />
 
       {/* Hero Section */}
@@ -203,10 +225,10 @@ export default function Home() {
               <p className="text-sm text-gray-500 mt-4">Supports .xlsx files up to 10MB</p>
             </div>
 
-            {uploadProgress > 0 && uploadProgress < 100 && (
+            {(isUploading || uploadProgress > 0) && (
               <div className="mt-6">
                 <div className="flex justify-between text-sm text-gray-400 mb-2">
-                  <span>Uploading...</span>
+                  <span>{isUploading ? 'Uploading...' : 'Processing...'}</span>
                   <span>{uploadProgress}%</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
@@ -218,6 +240,67 @@ export default function Home() {
               </div>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* User Files Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-white mb-4">Your Files</h2>
+            <p className="text-xl text-gray-300">Manage your uploaded Excel files</p>
+          </div>
+          
+          {loadingFiles ? (
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            </div>
+          ) : userFiles.length === 0 ? (
+            <div className="text-center">
+              <File className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-400">No files uploaded yet. Upload your first file above!</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {userFiles.map((file) => (
+                <div key={file._id} className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <File className="w-8 h-8 text-blue-400" />
+                    <div>
+                      <h4 className="text-white font-semibold">{file.originalName}</h4>
+                      <p className="text-gray-400 text-sm">
+                        {file.rowCount} rows • {file.columns.length} columns • {new Date(file.uploadDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => navigate("/dashboard", { state: { fileId: file._id } })}
+                      className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm('Are you sure you want to delete this file?')) {
+                          try {
+                            await excelAPI.deleteFile(file._id);
+                            setUserFiles(prev => prev.filter(f => f._id !== file._id));
+                          } catch (error) {
+                            console.error('Error deleting file:', error);
+                            alert('Failed to delete file');
+                          }
+                        }
+                      }}
+                      className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

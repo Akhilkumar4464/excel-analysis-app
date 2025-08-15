@@ -1,43 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../src/services/api';
-import SuccessPopup from '../src/components/SuccessPopup';
+import { Mail, Lock, User } from 'lucide-react';
 
 export default function Login() {
-    const [email, setEmail] = React.useState("");
-    const [password, setPassword] = React.useState("");
-    const [error, setError] = React.useState("");
-    const [loading, setLoading] = React.useState(false);
-    const [showSuccess, setShowSuccess] = React.useState(false);
+    const [formData, setFormData] = useState({
+        email: '',
+        password: ''
+    });
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+        setError('');
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");
+        setError('');
         setLoading(true);
 
         try {
-            const response = await authAPI.login({ email, password });
+            const response = await authAPI.login(formData);
+            
+            // Store token and user data
+            localStorage.setItem('token', response.data.accessToken);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
 
-            // Save token
-            localStorage.setItem('token', response.data.token);
-
-            // Show success popup
-            setShowSuccess(true);
-
-            // Delay navigation so popup is visible
-            setTimeout(() => {
+            // Redirect based on user role
+            if (response.data.user.role === 'admin') {
+                navigate('/admin-dashboard');
+            } else {
                 navigate('/');
-            }, 1500);
+            }
 
         } catch (error) {
             console.error('Login error:', error);
+            
             if (error.response?.status === 403) {
-                setError(error.response.data.message || 'Access denied');
+                setError(error.response.data.message || 'Your account is pending approval');
             } else if (error.response?.status === 400) {
-                setError(error.response.data.message || 'Invalid credentials');
+                setError(error.response.data.message || 'Invalid email or password');
             } else {
-                setError('Network error. Please check your connection.');
+                setError('Login failed. Please check your connection and try again.');
             }
         } finally {
             setLoading(false);
@@ -45,73 +55,93 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-200 relative">
-            {/* Success Popup */}
-            {showSuccess && (
-                <div className="absolute top-5 right-5 z-50">
-                    <SuccessPopup message="Login successful! Redirecting..." />
-                </div>
-            )}
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+            <div className="min-h-screen flex items-center justify-center px-4 py-12">
+                <div className="w-full max-w-md">
+                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-slate-700">
+                        <div className="text-center mb-8">
+                            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <User className="w-8 h-8 text-white" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
+                            <p className="text-gray-400">Sign in to your account</p>
+                        </div>
 
-            <div className="w-full max-w-md">
-                <form className="bg-white shadow-2xl rounded-2xl px-10 pt-10 pb-8" onSubmit={handleSubmit}>
-                    <div className="flex flex-col items-center mb-8">
-                        <img
-                            src="https://img.icons8.com/ios-filled/100/4e8cff/user-male-circle.png"
-                            alt="User Icon"
-                            className="w-20 h-20 mb-4"
-                        />
-                        <h2 className="text-3xl font-bold text-blue-700 mb-2">Welcome Back</h2>
-                        <p className="text-gray-500 text-sm">Sign in to your account</p>
-                        {error && <p className="text-red-600 mt-2">{error}</p>}
-                    </div>
-                    <div className="mb-6">
-                        <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="email">
-                            Email
-                        </label>
-                        <input
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                            type="email"
-                            placeholder="you@example.com"
-                            value={email}
-                            onChange={e => setEmail(e.target.value)}
-                            required
-                            disabled={loading}
-                        />
-                    </div>
-                    <div className="mb-8">
-                        <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="password">
-                            Password
-                        </label>
-                        <input
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                            type="password"
-                            placeholder="Enter your password"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            required
-                            disabled={loading}
-                        />
-                    </div>
-                    <button
-                        className="w-full bg-blue-600 hover:bg-blue-700 transition text-white font-bold py-3 rounded-lg shadow-lg mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                        type="submit"
-                        disabled={loading}
-                    >
-                        {loading ? 'Logging in...' : 'Login'}
-                    </button>
-                    <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm">
-                        <a href="#" className="text-blue-600 hover:underline mb-2 sm:mb-0">
-                            Forgot password?
-                        </a>
-                        <span className="text-gray-600">
-                            Don't have an account?{' '}
-                            <Link to="/register" className="text-blue-600 hover:underline font-semibold">
-                                Register here
+                        {error && (
+                            <div className="mb-6 p-3 bg-red-900/50 border border-red-700 rounded-lg">
+                                <p className="text-red-300 text-sm">{error}</p>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Email Address
+                                </label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        className="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
+                                        placeholder="you@example.com"
+                                        required
+                                        disabled={loading}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Password
+                                </label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        className="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
+                                        placeholder="••••••••"
+                                        required
+                                        disabled={loading}
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? (
+                                    <div className="flex items-center justify-center">
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                        Signing in...
+                                    </div>
+                                ) : (
+                                    'Sign In'
+                                )}
+                            </button>
+                        </form>
+
+                        <div className="mt-6 text-center">
+                            <Link to="/forgot-password" className="text-sm text-blue-400 hover:text-blue-300">
+                                Forgot your password?
                             </Link>
-                        </span>
+                        </div>
+
+                        <div className="mt-4 text-center text-sm text-gray-400">
+                            Don't have an account?{' '}
+                            <Link to="/register" className="font-medium text-blue-400 hover:text-blue-300">
+                                Sign up here
+                            </Link>
+                        </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );

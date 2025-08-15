@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Pie, Bar, Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -13,6 +13,7 @@ import {
   PointElement,
   LineElement,
 } from 'chart.js';
+import { excelAPI } from '../src/services/api';
 
 ChartJS.register(
   CategoryScale,
@@ -27,17 +28,37 @@ ChartJS.register(
 );
 
 export default function Dashboard() {
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [excelData, setExcelData] = useState([]);
   const [selectedColumn, setSelectedColumn] = useState('');
   const [chartType, setChartType] = useState('pie');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (location.state?.data) {
-      setExcelData(location.state.data);
-    }
-  }, [location.state]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const fileId = location.state?.fileId;
+        
+        if (fileId) {
+          // Fetch specific file data
+          const response = await excelAPI.getFile(fileId);
+          setExcelData(response.data.data || []);
+        } else {
+          // Fetch all files or use sample data
+          setExcelData([]);
+        }
+        setLoading(false);
+      } catch (err) {
+        setError(err.message || 'Error fetching data');
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [location.state?.fileId]);
 
   const getNumericColumns = () => {
     if (excelData.length === 0) return [];
@@ -129,6 +150,28 @@ export default function Dashboard() {
   };
 
   const renderChart = () => {
+    if (loading) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-xl text-gray-500">Loading data...</p>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-xl text-red-500">{error}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
+          >
+            Go to Home
+          </button>
+        </div>
+      );
+    }
+
     if (excelData.length === 0) {
       return (
         <div className="text-center py-12">
@@ -208,7 +251,7 @@ export default function Dashboard() {
                 onChange={(e) => setSelectedColumn(e.target.value)}
               >
                 <option value="">-- Select --</option>
-                {categoricalColumns.concat(numericColumns).map((col) => (
+                {[...new Set(categoricalColumns.concat(numericColumns))].map((col) => (
                   <option key={col} value={col}>
                     {col}
                   </option>
