@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, LogOut, BarChart3 } from 'lucide-react';
+import { User, LogOut, BarChart3, Shield } from 'lucide-react';
 
 const Navigation = () => {
-  const { user, logout, isAuthenticated, isAdmin } = useAuth();
+  const { user, logout, isAuthenticated, isAdmin, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -23,14 +23,24 @@ const Navigation = () => {
             <span className="text-xl font-bold text-white">ExcelAnalyzer Pro</span>
           </div>
           
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
+                {isSuperAdmin && (
+                  <Link
+                    to="/superadmin-dashboard"
+                    className="flex items-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span>SuperAdmin Dashboard</span>
+                  </Link>
+                )}
                 <div className="flex items-center space-x-3">
                   <User className="w-5 h-5 text-gray-300" />
                   <span className="text-white font-medium">
                     {user?.name || user?.email}
-                    {isAdmin && <span className="ml-2 text-xs bg-purple-600 px-2 py-1 rounded-full">Admin</span>}
+                    {isAdmin && !isSuperAdmin && <span className="ml-2 text-xs bg-purple-600 px-2 py-1 rounded-full">Admin</span>}
+                    {isSuperAdmin && <span className="ml-2 text-xs bg-red-600 px-2 py-1 rounded-full">SuperAdmin</span>}
                   </span>
                 </div>
                 <button

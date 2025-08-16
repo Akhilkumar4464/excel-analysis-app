@@ -224,13 +224,16 @@ export default function Dashboard() {
   const numericColumns = getNumericColumns();
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-slate-800 text-white">
       {/* Header */}
-      <header className="bg-slate-800 text-white py-4 px-8 shadow-md flex items-center justify-between">
-        <h1 className="text-2xl font-bold">📊 Dashboard</h1>
+      <header className="bg-slate-900/90 backdrop-blur-md text-white py-5 px-10 shadow-lg flex items-center justify-between border-b border-slate-800">
+        <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
+          <span className="text-blue-400">📊</span>
+          Dashboard
+        </h1>
         <button
           onClick={() => navigate('/')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          className="bg-blue-600 hover:bg-blue-700 transition-colors duration-200 text-white px-5 py-2 rounded-lg font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           Back to Home
         </button>
@@ -238,15 +241,15 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="p-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold mb-6">Data Visualization</h2>
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-4xl font-bold mb-8 text-blue-300 drop-shadow-lg">Data Visualization</h2>
 
           {/* Controls */}
-          <div className="mb-6 flex flex-wrap gap-4 items-center">
-            <label className="block">
-              Select Column:
+          <div className="mb-8 flex flex-wrap gap-6 items-center bg-slate-800/80 p-6 rounded-xl shadow-lg">
+            <label className="block font-medium text-lg">
+              <span className="mr-2 text-slate-300">Select Column:</span>
               <select
-                className="ml-2 p-2 rounded bg-slate-700 text-white"
+                className="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={selectedColumn}
                 onChange={(e) => setSelectedColumn(e.target.value)}
               >
@@ -259,10 +262,10 @@ export default function Dashboard() {
               </select>
             </label>
 
-            <label className="block">
-              Select Chart Type:
+            <label className="block font-medium text-lg">
+              <span className="mr-2 text-slate-300">Select Chart Type:</span>
               <select
-                className="ml-2 p-2 rounded bg-slate-700 text-white"
+                className="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={chartType}
                 onChange={(e) => setChartType(e.target.value)}
               >
@@ -275,7 +278,9 @@ export default function Dashboard() {
           </div>
 
           {/* Chart */}
-          {renderChart()}
+          <div className="transition-all duration-300">
+            {renderChart()}
+          </div>
         </div>
       </main>
     </div>

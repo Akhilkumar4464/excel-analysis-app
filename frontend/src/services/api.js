@@ -40,9 +40,15 @@ export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   getCurrentUser: () => api.get('/auth/me'),
   updateProfile: (profileData) => api.put('/auth/profile', profileData),
-  getPendingAdmins: () => api.get('/auth/pending-admins'),
-  approveAdmin: (userId) => api.put(`/auth/approve-admin/${userId}`),
-  rejectAdmin: (userId) => api.put(`/auth/reject-admin/${userId}`),
+};
+
+export const superadminAPI = {
+  getPendingAdmins: () => api.get('/superadmin/pending-admins'),
+  getAdmins: () => api.get('/superadmin/admins'),
+  approveAdmin: (userId) => api.post(`/superadmin/approve-admin/${userId}`),
+  rejectAdmin: (userId) => api.post(`/superadmin/reject-admin/${userId}`),
+  revokeAdmin: (userId) => api.post(`/superadmin/revoke-admin/${userId}`),
+  getStats: () => api.get('/superadmin/stats'),
 };
 
 export const excelAPI = {

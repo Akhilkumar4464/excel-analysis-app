@@ -5,6 +5,7 @@ import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
 import Home from '../pages/Home';
 import AdminDashboard from '../pages/AdminDashboard';
+import SuperAdminDashboard from '../pages/SuperAdminDashboard';
 import Navigation from './components/Navigation';
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
               <Route path="/home" element={<Home />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admindashboard" element={<AdminDashboard />} />
+              <Route path="/superadmin-dashboard" element={<SuperAdminDashboard />} />
               <Route path="*" element={<Navigate to="/home" replace />} />
             </>
           )}
