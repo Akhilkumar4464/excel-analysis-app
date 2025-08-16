@@ -8,6 +8,7 @@ const fs = require('fs');
 const authRoutes = require('./routes/auth');
 const excelRoutes = require('./routes/excel');
 const userRoutes = require('./routes/users');
+const superadminRoutes = require('./routes/superadmin');
 
 require('dotenv').config();
 
@@ -32,6 +33,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/excel', excelRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/superadmin', superadminRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -41,7 +43,8 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       excel: '/api/excel',
-      users: '/api/users'
+      users: '/api/users',
+      superadmin: '/api/superadmin'
     }
   });
 });
