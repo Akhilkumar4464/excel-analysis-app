@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../src/services/api';
+import { superadminAPI } from '../src/services/api';
 
 function AdminDashboard() {
     const [pendingAdmins, setPendingAdmins] = useState([]);
@@ -14,30 +14,30 @@ function AdminDashboard() {
 
     const fetchPendingAdmins = async () => {
         try {
-            const response = await authAPI.getPendingAdmins();
+            const response = await superadminAPI.getPendingAdmins();
             setPendingAdmins(response.data);
             setLoading(false);
         } catch (err) {
-            setError('Failed to fetch pending admin registrations', err);
+            setError('Failed to fetch pending admin registrations');
             setLoading(false);
         }
     };
 
     const handleApprove = async (userId) => {
         try {
-            await authAPI.approveAdmin(userId);
+            await superadminAPI.approveAdmin(userId);
             fetchPendingAdmins();
         } catch (err) {
-            setError('Failed to approve admin registration',err);
+            setError('Failed to approve admin registration');
         }
     };
 
     const handleReject = async (userId) => {
         try {
-            await authAPI.rejectAdmin(userId);
+            await superadminAPI.rejectAdmin(userId);
             fetchPendingAdmins();
         } catch (err) {
-            setError('Failed to reject admin registration',err);
+            setError('Failed to reject admin registration');
         }
     };
 
@@ -77,7 +77,7 @@ function AdminDashboard() {
                                             Email
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Requested Role
+                                            Requested At
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Actions
@@ -94,7 +94,7 @@ function AdminDashboard() {
                                                 {admin.email}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {admin.requestedRole}
+                                                {new Date(admin.createdAt).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <button

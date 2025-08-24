@@ -54,21 +54,19 @@ export default function Register() {
             const response = await authAPI.register(registrationData);
             
             // Handle successful registration
-            if (response.data.accessToken) {
-                // Auto-login for approved users
-                localStorage.setItem('token', response.data.accessToken);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-                setSuccess('Registration successful! Redirecting...');
-                
-                setTimeout(() => {
-                    navigate(response.data.user.role === 'admin' ? '/admin-dashboard' : '/dashboard');
-                }, 2000);
-            } else {
-                // Handle pending approval
-                setSuccess(response.data.message || 'Registration submitted for approval');
+            localStorage.setItem('token', response.data.accessToken);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+            
+            if (response.data.user.role === 'pending_admin') {
+                setSuccess('Admin registration submitted for approval. Please wait for super admin approval.');
                 setTimeout(() => {
                     navigate('/login');
                 }, 3000);
+            } else {
+                setSuccess('Registration successful! Redirecting...');
+                setTimeout(() => {
+                    navigate(response.data.user.role === 'admin' ? '/admin-dashboard' : '/dashboard');
+                }, 2000);
             }
 
         } catch (error) {
