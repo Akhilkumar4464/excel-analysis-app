@@ -88,11 +88,35 @@ router.post('/upload', auth, uploadLimiter, upload.single('file'), async (req, r
   }
 });
 
-// Get all files
+// Get all files (user's own files, or all files if admin)
 router.get('/files', auth, async (req, res) => {
   try {
-    const files = await ExcelFile.find({ uploadedBy: req.user._id })
+    let query = { uploadedBy: req.user._id };
+    
+    // If user is admin, get all files
+    if (req.user.role === 'admin') {
+      query = {};
+    }
+
+    const files = await ExcelFile.find(query)
       .populate('uploadedBy', 'username email')
+      .sort({ uploadDate: -1 });
+
+    res.json(files);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get all files (admin only - for admin dashboard)
+router.get('/files/all', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const files = await ExcelFile.find()
+      .populate('uploadedBy', 'username email role')
       .sort({ uploadDate: -1 });
 
     res.json(files);

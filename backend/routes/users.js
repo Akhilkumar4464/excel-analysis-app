@@ -99,4 +99,51 @@ router.get('/stats/overview', auth, async (req, res) => {
   }
 });
 
+// Get all users with their files (admin only)
+router.get('/with-files', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const users = await User.find()
+      .select('-password')
+      .populate({
+        path: 'excelFiles',
+        select: 'filename originalName uploadDate size analysis',
+        options: { sort: { uploadDate: -1 } }
+      })
+      .sort({ createdAt: -1 });
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get user details with files (admin only)
+router.get('/:id/details', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const user = await User.findById(req.params.id)
+      .select('-password')
+      .populate({
+        path: 'excelFiles',
+        select: 'filename originalName uploadDate size analysis rowCount columns',
+        options: { sort: { uploadDate: -1 } }
+      });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;

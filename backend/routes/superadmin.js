@@ -142,6 +142,50 @@ router.post('/revoke-admin/:id', superadminAuth, async (req, res) => {
   }
 });
 
+// Get all users who can be promoted to admin (regular users)
+router.get('/promotable-users', superadminAuth, async (req, res) => {
+  try {
+    const users = await User.find({ 
+      role: 'user',
+      isApproved: true
+    }).select('-password').sort({ createdAt: -1 });
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Promote user to admin (superadmin only)
+router.post('/promote-to-admin/:id', superadminAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.role !== 'user') {
+      return res.status(400).json({ message: 'User is not a regular user' });
+    }
+
+    user.role = 'admin';
+    await user.save();
+
+    res.json({ 
+      message: 'User promoted to admin successfully',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Get superadmin dashboard stats
 router.get('/stats', superadminAuth, async (req, res) => {
   try {

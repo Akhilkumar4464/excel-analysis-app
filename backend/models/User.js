@@ -98,4 +98,15 @@ userSchema.pre('save', function(next) {
   next();
 });
 
+// Virtual for getting user's excel files
+userSchema.virtual('excelFiles', {
+  ref: 'ExcelFile',
+  localField: '_id',
+  foreignField: 'uploadedBy'
+});
+
+// Ensure virtual fields are included when converting to JSON
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model('User', userSchema);

@@ -1,35 +1,19 @@
-# Chart Rendering Enhancement with Chart.js & Three.js - TODO List
+# Admin & Super Admin Functionality Implementation
 
-## Phase 1: Install Required Dependencies
-- [ ] Install Three.js and related packages
-- [ ] Install react-three-fiber for React integration
-- [ ] Install react-three-drei for helper components
+## Backend Updates
+- [x] Update users.js - Add admin endpoints for all users and files access
+- [x] Update excel.js - Add admin access to all files
+- [x] Update superadmin.js - Add user-to-admin promotion functionality
+- [ ] Update auth.js - Handle admin registration requests properly
 
-## Phase 2: Create 3D Chart Components
-- [ ] Create `frontend/src/components/ThreeDChart.jsx` - Main 3D chart component
-- [ ] Create `frontend/src/components/AxisSelector.jsx` - Dynamic axis selection UI
-- [ ] Create `frontend/src/components/ChartTypeSelector.jsx` - Chart type selection with 2D/3D options
+## Frontend Updates
+- [x] Update AdminDashboard.jsx - Show all users and their Excel files
+- [ ] Update SuperAdminDashboard.jsx - Add user-to-admin promotion management
+- [x] Update api.js - Add new admin API endpoints
+- [ ] Update Navigation.jsx - Improve admin navigation
 
-## Phase 3: Enhance Dashboard.jsx
-- [ ] Add Three.js chart rendering logic
-- [ ] Implement dynamic axis selection for both 2D and 3D charts
-- [ ] Add chart type switching between 2D (Chart.js) and 3D (Three.js)
-- [ ] Add data preprocessing for 3D visualization
-
-## Phase 4: Create 3D Chart Types
-- [ ] 3D Bar Chart with Three.js
-- [ ] 3D Scatter Plot with Three.js
-- [ ] 3D Surface Plot for continuous data
-- [ ] Interactive 3D controls (rotation, zoom, pan)
-
-## Phase 5: Integration & Testing
-- [ ] Update Dashboard.jsx to integrate new components
-- [ ] Add responsive design for 3D charts
-- [ ] Test with sample Excel data
-- [ ] Add error handling and loading states
-
-## Phase 6: Final Polish
-- [ ] Add loading animations
-- [ ] Add responsive design
-- [ ] Add documentation/comments
-- [ ] Final testing and bug fixes
+## Testing
+- [ ] Test admin access to user data and files
+- [ ] Test user-to-admin promotion flow
+- [ ] Test role-based access controls
+- [ ] Verify file permissions work correctly
