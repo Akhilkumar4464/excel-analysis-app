@@ -24,6 +24,14 @@ const Navigation = () => {
           </div>
           
           <div className="flex items-center space-x-4">
+            {isAdmin && (
+              <Link
+                to="/admin-dashboard"
+                className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm"
+              >
+                <span>Admin Dashboard</span>
+              </Link>
+            )}
             {isAuthenticated ? (
               <>
                 {isSuperAdmin && (

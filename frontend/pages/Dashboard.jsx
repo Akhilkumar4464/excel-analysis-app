@@ -282,30 +282,37 @@ export default function Dashboard() {
   const numericColumns = getNumericColumns();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-slate-800 text-white">
+
+
+  
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#020617] to-[#1e293b] text-white font-sans transition-all duration-500">
       {/* Header */}
-      <header className="bg-slate-900/90 backdrop-blur-md text-white py-5 px-10 shadow-lg flex items-center justify-between border-b border-slate-800">
-        <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
-          <span className="text-blue-400">📊</span>
-          Dashboard
+      <header className="bg-slate-900/70 backdrop-blur-lg text-white py-5 px-10 shadow-xl flex items-center justify-between border-b border-slate-800 sticky top-0 z-50">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center gap-3">
+          <span className="text-blue-400 text-5xl animate-bounce">📊</span>
+          <span className="drop-shadow-lg hover:text-blue-400 transition-colors duration-300 cursor-default">
+            Dashboard
+          </span>
         </h1>
         <button
-          onClick={() => navigate('/')}
-          className="bg-blue-600 hover:bg-blue-700 transition-colors duration-200 text-white px-5 py-2 rounded-lg font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+          onClick={() => navigate("/")}
+          className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 transition-all duration-300 text-white px-6 py-2.5 rounded-xl font-semibold shadow-md hover:shadow-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
-          Back to Home
+          ⬅ Back to Home
         </button>
       </header>
 
       {/* Main Content */}
       <main className="p-8">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-4xl font-bold mb-8 text-blue-300 drop-shadow-lg">Data Visualization</h2>
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl font-extrabold mb-10 text-blue-300 drop-shadow-lg tracking-tight text-center animate-fadeIn">
+            Data Visualization Dashboard
+          </h2>
 
           {/* Controls */}
-          <div className="mb-8 space-y-6">
+          <div className="mb-10 space-y-7">
             {/* Chart Type Selector */}
-            <div className="bg-slate-800/80 p-6 rounded-xl shadow-lg">
+            <div className="bg-slate-800/60 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700 hover:shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02]">
               <ChartTypeSelector
                 selectedType={chartType}
                 onTypeChange={setChartType}
@@ -316,20 +323,22 @@ export default function Dashboard() {
 
             {/* Column Selection */}
             {!is3D && (
-              <div className="flex flex-wrap gap-6 items-center bg-slate-800/80 p-6 rounded-xl shadow-lg">
+              <div className="flex flex-wrap gap-6 items-center bg-slate-800/60 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-700 hover:shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02]">
                 <label className="block font-medium text-lg">
-                  <span className="mr-2 text-slate-300">Select Column:</span>
+                  <span className="mr-3 text-slate-300">Select Column:</span>
                   <select
-                    className="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400 hover:border-blue-400 cursor-pointer transition-colors duration-300"
                     value={selectedColumn}
                     onChange={(e) => setSelectedColumn(e.target.value)}
                   >
                     <option value="">-- Select --</option>
-                    {[...new Set(categoricalColumns.concat(numericColumns))].map((col) => (
-                      <option key={col} value={col}>
-                        {col}
-                      </option>
-                    ))}
+                    {[...new Set(categoricalColumns.concat(numericColumns))].map(
+                      (col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      )
+                    )}
                   </select>
                 </label>
               </div>
@@ -337,7 +346,7 @@ export default function Dashboard() {
           </div>
 
           {/* Chart */}
-          <div className="transition-all duration-300">
+          <div className="transition-all duration-300 p-6 bg-slate-900/40 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-700 hover:shadow-blue-500/20 hover:scale-[1.01]">
             {renderChart()}
           </div>
         </div>
@@ -345,3 +354,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

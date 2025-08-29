@@ -4,6 +4,7 @@ import { authAPI } from '../src/services/api';
 function SuperAdminDashboard() {
     const [pendingAdmins, setPendingAdmins] = useState([]);
     const [allAdmins, setAllAdmins] = useState([]);
+    const [promotableUsers, setPromotableUsers] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -11,7 +12,17 @@ function SuperAdminDashboard() {
 
     useEffect(() => {
         fetchData();
+        fetchPromotableUsers();
     }, []);
+
+    const fetchPromotableUsers = async () => {
+        try {
+            const response = await authAPI.getPromotableUsers();
+            setPromotableUsers(response.data);
+        } catch (error) {
+            setError('Failed to fetch promotable users');
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -55,6 +66,16 @@ function SuperAdminDashboard() {
             fetchData();
         } catch (error) {
             setError('Failed to revoke admin privileges' , error);
+        }
+    };
+
+    const handlePromote = async (userId) => {
+        try {
+            await authAPI.promoteToAdmin(userId);
+            fetchPromotableUsers();
+            fetchData(); // Refresh all data
+        } catch (error) {
+            setError('Failed to promote user to admin');
         }
     };
 
@@ -120,6 +141,16 @@ function SuperAdminDashboard() {
                                 }`}
                             >
                                 All Admins ({allAdmins.length})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('promote')}
+                                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'promote'
+                                        ? 'border-blue-500 text-blue-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                Promote Users ({promotableUsers.length})
                             </button>
                         </nav>
                     </div>
@@ -242,6 +273,60 @@ function SuperAdminDashboard() {
                                                                 Revoke
                                                             </button>
                                                         )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'promote' && (
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Promote Users to Admin</h2>
+                            
+                            {promotableUsers.length === 0 ? (
+                                <p className="text-gray-600">No users available for promotion.</p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Username
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Email
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Created At
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Actions
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {promotableUsers.map((user) => (
+                                                <tr key={user._id}>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        {user.username}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {user.email}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {new Date(user.createdAt).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                        <button
+                                                            onClick={() => handlePromote(user._id)}
+                                                            className="text-green-600 hover:text-green-900"
+                                                        >
+                                                            Promote to Admin
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             ))}

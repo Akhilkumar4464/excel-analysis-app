@@ -6,6 +6,7 @@ import Dashboard from '../pages/Dashboard';
 import Home from '../pages/Home';
 import AdminDashboard from '../pages/AdminDashboard';
 import SuperAdminDashboard from '../pages/SuperAdminDashboard';
+import UserFiles from '../pages/UserFiles';
 import Navigation from './components/Navigation';
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admindashboard" element={<AdminDashboard />} />
               <Route path="/superadmin-dashboard" element={<SuperAdminDashboard />} />
+              <Route path="/user-files/:userId" element={<UserFiles />} />
               <Route path="*" element={<Navigate to="/home" replace />} />
             </>
           )}
